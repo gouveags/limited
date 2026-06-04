@@ -29,6 +29,20 @@ impl RedisRateLimiter {
             .as_millis() as u64
     }
 
+    pub async fn allow_at(
+        &self,
+        strategy: RateLimiterStrategy,
+        key: &str,
+        now_ms: u64,
+    ) -> anyhow::Result<RateLimitDecision> {
+        match strategy {
+            RateLimiterStrategy::FixedWindow => self.fixed_window(key, now_ms).await,
+            RateLimiterStrategy::SlidingWindowLog => self.sliding_window_log(key, now_ms).await,
+            RateLimiterStrategy::TokenBucket => self.token_bucket(key, now_ms).await,
+            RateLimiterStrategy::LeakyBucket => self.leaky_bucket(key, now_ms).await,
+        }
+    }
+
     async fn fixed_window(&self, key: &str, now_ms: u64) -> anyhow::Result<RateLimitDecision> {
         let window = now_ms / (WINDOW_SECONDS * 1000);
         let redis_key = format!("rate_limit:fixed_window:{key}:{window}");
@@ -195,14 +209,7 @@ impl RateLimiter for RedisRateLimiter {
         strategy: RateLimiterStrategy,
         key: &str,
     ) -> anyhow::Result<RateLimitDecision> {
-        let now_ms = Self::now_millis();
-
-        match strategy {
-            RateLimiterStrategy::FixedWindow => self.fixed_window(key, now_ms).await,
-            RateLimiterStrategy::SlidingWindowLog => self.sliding_window_log(key, now_ms).await,
-            RateLimiterStrategy::TokenBucket => self.token_bucket(key, now_ms).await,
-            RateLimiterStrategy::LeakyBucket => self.leaky_bucket(key, now_ms).await,
-        }
+        self.allow_at(strategy, key, Self::now_millis()).await
     }
 }
 
