@@ -1,5 +1,6 @@
 FROM rust:1.88-slim AS builder
 
+ENV PATH="/usr/local/cargo/bin:${PATH}"
 WORKDIR /app
 COPY . .
 RUN cargo build --release
