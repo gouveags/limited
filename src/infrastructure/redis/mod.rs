@@ -1,3 +1,6 @@
+pub mod counter_repository;
+pub mod rate_limiter;
+
 use anyhow::Context;
 use redis::aio::MultiplexedConnection;
 
