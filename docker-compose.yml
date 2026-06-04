@@ -1,0 +1,22 @@
+services:
+  app:
+    build: .
+    environment:
+      BIND_ADDRESS: 0.0.0.0:8080
+      REDIS_URL: redis://redis:6379
+      RUST_LOG: limited=debug,tower_http=debug
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:8
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
